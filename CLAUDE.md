@@ -44,3 +44,20 @@ PH trunk TBD · S3-compatible bucket for recordings · Railway for all deploymen
 ### Current state
 (Claude Code updates this: phase completed, what works, known gaps, next step.)
 - 2026-09-28: repo created. Only CLAUDE.md and docs/outbound/ exist. Next: Phase 0.5 scaffold.
+- 2026-09-29: **Phase 0.5 (scaffold) done.**
+  - Works: uv workspace (root pyproject.toml + uv.lock) with apps/api, packages/shared
+    (`maria_shared`), packages/playbook-schema (`playbook_schema`). apps/api: FastAPI `/health` →
+    {"ok":true}, pydantic-settings for all 02 §6 env vars (secrets are SecretStr), JSON logging with
+    `log_context(attempt_id=..., campaign_id=...)`, async SQLAlchemy engine + Base, Alembic revision
+    `0001_phase0_5` (pgvector + pgcrypto). Empty module packages crm/dialer/learning/notify/internal.
+    apps/web: Vite + React 19 + TS + Tailwind v4 + TanStack Query + React Router 7, sidebar shell with
+    placeholder /crm/* pages and an API health dot. Makefile + scripts/*.ps1 equivalents,
+    docker-compose (pgvector/pgvector:pg16), Dockerfiles + railway.json for api (context = repo root,
+    pre-deploy `alembic upgrade head`) and web (nginx, SPA fallback, `VITE_API_BASE_URL` build arg),
+    GitHub Actions CI (ruff, pytest with pgvector service, alembic round-trip, eslint/tsc, vitest, build).
+  - Tests: pytest creates/drops `<db>_test` (or uses TEST_DATABASE_URL), migrates to head; per-test
+    session rolled back. `make test` / `make lint` pass (8 pytest + 1 vitest).
+  - Known gaps: docker compose and the Dockerfiles have not been run (no Docker daemon in the build
+    sandbox; checked against a local Postgres 16 + pgvector). The PowerShell scripts have not
+    been run on Windows. Nothing is deployed to Railway yet.
+  - Next: Phase 1 (CRM foundation), per 06-CLAUDE-CODE-PHASE-PROMPTS.md.
