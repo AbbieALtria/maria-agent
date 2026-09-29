@@ -1,0 +1,21 @@
+# Local dev database only. Postgres 16 + pgvector.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: maria-postgres
+    environment:
+      POSTGRES_USER: maria
+      POSTGRES_PASSWORD: maria
+      POSTGRES_DB: maria
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U maria -d maria"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
