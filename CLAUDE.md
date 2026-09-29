@@ -61,3 +61,42 @@ PH trunk TBD · S3-compatible bucket for recordings · Railway for all deploymen
     sandbox; checked against a local Postgres 16 + pgvector). The PowerShell scripts have not
     been run on Windows. Nothing is deployed to Railway yet.
   - Next: Phase 1 (CRM foundation), per 06-CLAUDE-CODE-PHASE-PROMPTS.md.
+- 2026-09-29: **Phase 1 (CRM foundation) done.**
+  - Decisions recorded under "Clarifications" at the top of 03-CRM-DATA-MODEL.md: 03 lead statuses
+    are canonical (callback_due/retry_due are scheduler *conditions*), campaigns.requeue_no_show,
+    and a watchdog for both attempts and leads.
+  - Schema: Alembic `0002_phase1` creates all 25 tables from 03 §1 (16 Postgres enums, listed
+    indexes, ivfflat on objection_library.embedding, NULLS NOT DISTINCT unique on dnc_entries). The
+    circular FKs are added after the tables. Upgrade, downgrade and upgrade all work, and
+    `alembic check` is clean. Models are in app/crm/models.py and app/learning/models.py.
+  - API `/api/v1` (app/crm/routers): auth (bcrypt + HS256 JWT; role/is_active re-read from the DB
+    on every request), /me, users, clients, campaigns (CRUD, actions
+    start/pause/resume/complete/clone, playbook versions + activate with the ≥90 % eval gate for
+    non-test campaigns and an audit-logged admin override), leads (CSV import with dry_run
+    preview, list/search/filter, manual create, PATCH, timeline, bulk requeue/move/dnc/export),
+    DNC (add also moves matching leads to `dnc`, check, admin-only delete), teams + availability,
+    and sip-trunks. Roles: admin all; manager writes campaigns/leads/teams/DNC; rep/qa read-only
+    except DNC add. Changes to users, trunks, campaigns, DNC, leads and playbook activation are
+    audit-logged.
+  - packages/shared: normalize_phone (E.164, phonenumbers, region default = row country →
+    campaign.country_codes[0] → market) and infer_timezone (US state / CA province → phone area
+    code → PH=Asia/Manila → campaign default).
+  - dialer/state_machine.py: pure `transition()` for the 03 §2 table plus the watchdog rule
+    (first stale attempt → queued, a repeat → exhausted). Deviations: callback leads are pickable
+    (Clarification 1); no_human/failed/hung_up_early retry like no_answer; manual requeue is
+    refused for dnc and calling leads; attempts are counted when the outcome is recorded.
+  - Web: login (JWT in localStorage, 401 → logout), Campaigns (list + 6-tab editor, test-mode
+    banner, start/pause/resume/clone/complete, JSON-textarea playbook versions), Leads (4-step
+    import wizard, TanStack Table with timezone + local time, bulk bar, lead drawer), Settings
+    (users/teams/DNC/SIP trunks).
+  - Seed: `scripts/seed.ps1` (app/seed.py, idempotent; admin password from SEED_ADMIN_PASSWORD).
+    `scripts/sample_leads.csv`: 50 rows US/CA/PH → import 45 / 3 dupes / 2 DNC / 0 invalid.
+  - Tests: 118 pytest (state machine, phone/timezone, auth + role matrix, import incl. dupes/DNC/
+    bad phones, campaigns/playbooks/bulk/DNC, sample CSV) + 4 vitest. The browser walkthrough
+    (log in, create campaign, import sample, check timezones) passed on a local Postgres 16.
+  - Known gaps: not run on Windows or against Railway Postgres here. No client scoping of data
+    for users with client_id (NFR-7 later). No login rate limiting. Playbook JSON is only checked
+    to be an object (schema validation is Phase 2). The availability API exists, but has no UI yet.
+    Dashboard/Calls/Appointments/Review/Playbooks pages are placeholders. OpenLeads import and
+    API keys are not built.
+  - Next: Phase 2 (first AI call), per 06-CLAUDE-CODE-PHASE-PROMPTS.md.

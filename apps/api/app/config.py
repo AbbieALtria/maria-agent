@@ -61,11 +61,28 @@ class Settings(BaseSettings):
     default_recording_retention_days: int = 180
 
     jwt_secret: SecretStr | None = None
+    jwt_expire_minutes: int = 720
+
+    # Used only by `python -m app.seed`.
+    seed_admin_email: str = "admin@altria.local"
+    seed_admin_password: SecretStr | None = None
 
     @field_validator("database_url")
     @classmethod
     def _async_driver(cls, v: str) -> str:
         return to_async_url(v)
+
+    @property
+    def is_development(self) -> bool:
+        return self.env.lower() in ("development", "dev", "local", "test")
+
+    def check_production_secrets(self) -> None:
+        """Refuse to boot outside development without real secrets."""
+        if self.is_development:
+            return
+        secret = self.jwt_secret.get_secret_value() if self.jwt_secret else ""
+        if len(secret) < 32 or secret.startswith("dev-only"):
+            raise RuntimeError("JWT_SECRET must be set to a random value of 32+ characters")
 
     @property
     def cors_origin_list(self) -> list[str]:

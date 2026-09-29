@@ -1,5 +1,16 @@
 # 03 — CRM Data Model, API and UI
 
+## Clarifications (decided 2026-09-29, override anything below that conflicts)
+
+1. **Lead statuses:** §1/§2 of this document are the source of truth. The `callback_due` and
+   `retry_due` in 02 §2 are *selection conditions*, not statuses: the scheduler picks
+   `status='callback' AND next_attempt_at <= now()` and `status='queued' AND next_attempt_at <= now()`
+   (plus `status='new'`). The Phase 3 scheduler query is written that way.
+2. **`campaigns.requeue_no_show bool default false`** is part of the schema (used by the
+   `appointment_set → callback` transition in §2).
+3. **Watchdog covers both:** call_attempts in `dialing|in_call` older than 15 min → `failed_stale`,
+   and their leads are reset from `calling → queued` (one requeue).
+
 Postgres 15+, extension `pgvector`. All tables have `id uuid pk default gen_random_uuid()`, `created_at`, `updated_at`. Use Alembic migrations. Timestamps are `timestamptz`; prospect-local times are derived from `leads.timezone`.
 
 ## 1. Schema

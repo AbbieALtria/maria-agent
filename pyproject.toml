@@ -32,3 +32,6 @@ asyncio_default_test_loop_scope = "session"
 
 [tool.ruff.lint.isort]
 known-first-party = ["app", "maria_shared", "playbook_schema"]
+
+[tool.ruff.lint.per-file-ignores]
+"apps/api/alembic/versions/*" = ["E501"]
