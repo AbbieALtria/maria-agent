@@ -1,5 +1,5 @@
 # POSIX make targets. Windows (PowerShell) equivalents: scripts/*.ps1 — see README.
-.PHONY: install dev api web test test-api test-web lint format migrate db-up db-down
+.PHONY: install dev api web test test-api test-web lint format migrate seed db-up db-down
 
 install:
 	uv sync --all-packages
@@ -13,6 +13,9 @@ db-down:
 
 migrate:
 	cd apps/api && uv run alembic upgrade head
+
+seed:
+	cd apps/api && uv run python -m app.seed
 
 api:
 	cd apps/api && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

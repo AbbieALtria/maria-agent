@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet } from "react-router-dom";
 import { apiGet } from "../lib/api";
+import { useAuth } from "../lib/auth";
 
 const NAV = [
   { to: "/crm", label: "Dashboard", end: true },
@@ -30,9 +31,10 @@ function ApiStatus() {
 }
 
 export function AppShell() {
+  const { user, logout } = useAuth();
   return (
     <div className="flex min-h-screen text-slate-900">
-      <aside className="flex w-56 flex-col bg-slate-900 p-4 text-slate-100">
+      <aside className="sticky top-0 flex h-screen w-56 shrink-0 flex-col bg-slate-900 p-4 text-slate-100">
         <div className="mb-6 text-lg font-semibold">Maria CRM</div>
         <nav className="flex flex-1 flex-col gap-1">
           {NAV.map((item) => (
@@ -48,9 +50,22 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
+        {user && (
+          <div className="mb-3 border-t border-slate-700 pt-3 text-xs">
+            <div className="truncate text-slate-200" title={user.email}>
+              {user.full_name || user.email}
+            </div>
+            <div className="flex items-center justify-between text-slate-400">
+              <span>{user.role}</span>
+              <button type="button" className="hover:text-white" onClick={logout}>
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
         <ApiStatus />
       </aside>
-      <main className="flex-1 p-8">
+      <main className="min-w-0 flex-1 p-8">
         <Outlet />
       </main>
     </div>

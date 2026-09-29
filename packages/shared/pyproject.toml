@@ -3,7 +3,9 @@ name = "maria-shared"
 version = "0.1.0"
 description = "Shared helpers for Maria (phone normalization, timezone lookup, cost calc)."
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "phonenumbers>=8.13",
+]
 
 [build-system]
 requires = ["hatchling"]
