@@ -1,5 +1,6 @@
 # POSIX make targets. Windows (PowerShell) equivalents: scripts/*.ps1 — see README.
-.PHONY: install dev api web test test-api test-web lint format migrate seed db-up db-down
+.PHONY: install dev api web test test-api test-web lint format migrate seed db-up db-down \
+	lk-setup worker test-call
 
 install:
 	uv sync --all-packages
@@ -46,3 +47,13 @@ lint:
 format:
 	uv run ruff check --fix .
 	uv run ruff format .
+
+# Phase 2: LiveKit trunk + test campaign setup, voice-worker (dev), and a live test call.
+lk-setup:
+	uv run python scripts/lk_setup.py
+
+worker:
+	cd apps/voice-worker && uv run python main.py download-files && uv run python main.py dev
+
+test-call:
+	uv run python scripts/test_call.py

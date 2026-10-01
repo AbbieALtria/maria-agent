@@ -1,0 +1,844 @@
+{
+  "$defs": {
+    "AppointmentGoal": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "default": "phone",
+          "enum": [
+            "phone",
+            "video",
+            "onsite"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "duration_min": {
+          "default": 20,
+          "maximum": 240,
+          "minimum": 5,
+          "title": "Duration Min",
+          "type": "integer"
+        },
+        "with_whom": {
+          "minLength": 1,
+          "title": "With Whom",
+          "type": "string"
+        },
+        "value_prop_for_meeting": {
+          "minLength": 1,
+          "title": "Value Prop For Meeting",
+          "type": "string"
+        },
+        "min_lead_time_hours": {
+          "default": 24,
+          "minimum": 0,
+          "title": "Min Lead Time Hours",
+          "type": "integer"
+        },
+        "max_days_ahead": {
+          "default": 10,
+          "maximum": 60,
+          "minimum": 1,
+          "title": "Max Days Ahead",
+          "type": "integer"
+        },
+        "offer_slots_count": {
+          "default": 2,
+          "maximum": 4,
+          "minimum": 1,
+          "title": "Offer Slots Count",
+          "type": "integer"
+        },
+        "require_email": {
+          "default": false,
+          "title": "Require Email",
+          "type": "boolean"
+        },
+        "require_address": {
+          "default": false,
+          "title": "Require Address",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "with_whom",
+        "value_prop_for_meeting"
+      ],
+      "title": "AppointmentGoal",
+      "type": "object"
+    },
+    "Compliance": {
+      "additionalProperties": false,
+      "properties": {
+        "ai_disclosure": {
+          "default": "on_ask",
+          "enum": [
+            "on_ask",
+            "upfront"
+          ],
+          "title": "Ai Disclosure",
+          "type": "string"
+        },
+        "ai_disclosure_text": {
+          "minLength": 1,
+          "title": "Ai Disclosure Text",
+          "type": "string"
+        },
+        "recording_notice": {
+          "default": false,
+          "title": "Recording Notice",
+          "type": "boolean"
+        },
+        "recording_notice_text": {
+          "default": "",
+          "title": "Recording Notice Text",
+          "type": "string"
+        },
+        "opt_out_phrases_extra": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Opt Out Phrases Extra",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ai_disclosure_text"
+      ],
+      "title": "Compliance",
+      "type": "object"
+    },
+    "ExitRules": {
+      "additionalProperties": false,
+      "properties": {
+        "max_rebuttals_total": {
+          "default": 2,
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Max Rebuttals Total",
+          "type": "integer"
+        },
+        "on_second_no": {
+          "minLength": 1,
+          "title": "On Second No",
+          "type": "string"
+        },
+        "hostile": {
+          "minLength": 1,
+          "title": "Hostile",
+          "type": "string"
+        },
+        "max_duration_sec": {
+          "default": 480,
+          "maximum": 3600,
+          "minimum": 30,
+          "title": "Max Duration Sec",
+          "type": "integer"
+        },
+        "silence_timeout_sec": {
+          "default": 12,
+          "maximum": 120,
+          "minimum": 3,
+          "title": "Silence Timeout Sec",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "on_second_no",
+        "hostile"
+      ],
+      "title": "ExitRules",
+      "type": "object"
+    },
+    "Flow": {
+      "additionalProperties": false,
+      "properties": {
+        "opener": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Opener",
+          "type": "array"
+        },
+        "permission": {
+          "default": "",
+          "title": "Permission",
+          "type": "string"
+        },
+        "reason_for_call": {
+          "minLength": 1,
+          "title": "Reason For Call",
+          "type": "string"
+        },
+        "qualify": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/QualifyQuestion"
+          },
+          "title": "Qualify",
+          "type": "array"
+        },
+        "pitch_points": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Pitch Points",
+          "type": "array"
+        },
+        "close": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Close",
+          "type": "array"
+        },
+        "confirm": {
+          "minLength": 1,
+          "title": "Confirm",
+          "type": "string"
+        },
+        "wrap": {
+          "minLength": 1,
+          "title": "Wrap",
+          "type": "string"
+        },
+        "voicemail": {
+          "$ref": "#/$defs/Voicemail",
+          "default": {
+            "leave_message": false,
+            "text": ""
+          }
+        },
+        "ivr": {
+          "$ref": "#/$defs/Ivr",
+          "default": {
+            "dtmf": null,
+            "max_wait_sec": 8
+          }
+        },
+        "gatekeeper": {
+          "default": "",
+          "title": "Gatekeeper",
+          "type": "string"
+        }
+      },
+      "required": [
+        "opener",
+        "reason_for_call",
+        "close",
+        "confirm",
+        "wrap"
+      ],
+      "title": "Flow",
+      "type": "object"
+    },
+    "Goal": {
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "default": "book_appointment",
+          "enum": [
+            "book_appointment",
+            "qualify_only",
+            "callback"
+          ],
+          "title": "Primary",
+          "type": "string"
+        },
+        "appointment": {
+          "$ref": "#/$defs/AppointmentGoal"
+        }
+      },
+      "required": [
+        "appointment"
+      ],
+      "title": "Goal",
+      "type": "object"
+    },
+    "Ivr": {
+      "additionalProperties": false,
+      "properties": {
+        "dtmf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dtmf"
+        },
+        "max_wait_sec": {
+          "default": 8,
+          "maximum": 60,
+          "minimum": 0,
+          "title": "Max Wait Sec",
+          "type": "integer"
+        }
+      },
+      "title": "Ivr",
+      "type": "object"
+    },
+    "Language": {
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "default": "en-US",
+          "minLength": 1,
+          "title": "Primary",
+          "type": "string"
+        },
+        "allow_switch_to": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Allow Switch To",
+          "type": "array"
+        },
+        "stt": {
+          "$ref": "#/$defs/SttSettings",
+          "default": {
+            "model": "nova-3",
+            "language": "en"
+          }
+        },
+        "tts": {
+          "$ref": "#/$defs/TtsSettings",
+          "default": {
+            "model": "eleven_flash_v2_5",
+            "language_code": null
+          }
+        }
+      },
+      "title": "Language",
+      "type": "object"
+    },
+    "Meta": {
+      "additionalProperties": false,
+      "properties": {
+        "campaign_name": {
+          "minLength": 1,
+          "title": "Campaign Name",
+          "type": "string"
+        },
+        "client": {
+          "default": "",
+          "title": "Client",
+          "type": "string"
+        },
+        "market": {
+          "default": "US",
+          "enum": [
+            "US",
+            "CA",
+            "PH",
+            "OTHER"
+          ],
+          "title": "Market",
+          "type": "string"
+        },
+        "notes": {
+          "default": "",
+          "title": "Notes",
+          "type": "string"
+        }
+      },
+      "required": [
+        "campaign_name"
+      ],
+      "title": "Meta",
+      "type": "object"
+    },
+    "Models": {
+      "additionalProperties": false,
+      "properties": {
+        "live": {
+          "default": "claude-sonnet-4-6",
+          "minLength": 1,
+          "title": "Live",
+          "type": "string"
+        },
+        "analysis": {
+          "default": "claude-sonnet-5-5",
+          "minLength": 1,
+          "title": "Analysis",
+          "type": "string"
+        },
+        "amd": {
+          "default": "claude-haiku-4-5",
+          "minLength": 1,
+          "title": "Amd",
+          "type": "string"
+        }
+      },
+      "title": "Models",
+      "type": "object"
+    },
+    "Notifications": {
+      "additionalProperties": false,
+      "properties": {
+        "prospect_confirmation": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Prospect Confirmation",
+          "type": "object"
+        },
+        "team": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Team",
+          "type": "object"
+        }
+      },
+      "title": "Notifications",
+      "type": "object"
+    },
+    "Objection": {
+      "additionalProperties": false,
+      "properties": {
+        "trigger": {
+          "minLength": 1,
+          "title": "Trigger",
+          "type": "string"
+        },
+        "response": {
+          "minLength": 1,
+          "title": "Response",
+          "type": "string"
+        },
+        "max_rebuttals": {
+          "default": 1,
+          "maximum": 99,
+          "minimum": 0,
+          "title": "Max Rebuttals",
+          "type": "integer"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "enum": [
+                "check_slots",
+                "book_appointment",
+                "schedule_callback",
+                "mark_not_interested",
+                "mark_wrong_number",
+                "add_to_dnc",
+                "send_info",
+                "transfer_to_human",
+                "escalate_complaint",
+                "set_stage",
+                "end_call"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool"
+        }
+      },
+      "required": [
+        "trigger",
+        "response"
+      ],
+      "title": "Objection",
+      "type": "object"
+    },
+    "Persona": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_name": {
+          "default": "Maria",
+          "minLength": 1,
+          "title": "Agent Name",
+          "type": "string"
+        },
+        "company": {
+          "minLength": 1,
+          "title": "Company",
+          "type": "string"
+        },
+        "role": {
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "voice_id": {
+          "minLength": 1,
+          "title": "Voice Id",
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/$defs/Style",
+          "default": {
+            "tone": "warm, upbeat, concise, professional-casual",
+            "formality": "casual-professional",
+            "max_words_per_turn": 35,
+            "fillers": [],
+            "avoid": [],
+            "speak_numbers_as_words": true
+          }
+        }
+      },
+      "required": [
+        "company",
+        "role",
+        "voice_id"
+      ],
+      "title": "Persona",
+      "type": "object"
+    },
+    "QualifyQuestion": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Key",
+          "type": "string"
+        },
+        "ask": {
+          "minLength": 1,
+          "title": "Ask",
+          "type": "string"
+        },
+        "type": {
+          "default": "text",
+          "enum": [
+            "bool",
+            "text",
+            "number",
+            "choice"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "choices": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Choices"
+        }
+      },
+      "required": [
+        "key",
+        "ask"
+      ],
+      "title": "QualifyQuestion",
+      "type": "object"
+    },
+    "Runtime": {
+      "additionalProperties": false,
+      "properties": {
+        "min_endpointing_delay": {
+          "default": 0.5,
+          "maximum": 3.0,
+          "minimum": 0.1,
+          "title": "Min Endpointing Delay",
+          "type": "number"
+        },
+        "max_endpointing_delay": {
+          "default": 3.0,
+          "maximum": 10.0,
+          "minimum": 0.5,
+          "title": "Max Endpointing Delay",
+          "type": "number"
+        },
+        "allow_interruptions": {
+          "default": true,
+          "title": "Allow Interruptions",
+          "type": "boolean"
+        },
+        "preemptive_generation": {
+          "default": true,
+          "title": "Preemptive Generation",
+          "type": "boolean"
+        },
+        "greeting_delay_ms": {
+          "default": 600,
+          "maximum": 5000,
+          "minimum": 0,
+          "title": "Greeting Delay Ms",
+          "type": "integer"
+        },
+        "background_noise": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Noise"
+        }
+      },
+      "title": "Runtime",
+      "type": "object"
+    },
+    "SttSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "default": "nova-3",
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "language": {
+          "default": "en",
+          "minLength": 1,
+          "title": "Language",
+          "type": "string"
+        }
+      },
+      "title": "SttSettings",
+      "type": "object"
+    },
+    "Style": {
+      "additionalProperties": false,
+      "properties": {
+        "tone": {
+          "default": "warm, upbeat, concise, professional-casual",
+          "title": "Tone",
+          "type": "string"
+        },
+        "formality": {
+          "default": "casual-professional",
+          "title": "Formality",
+          "type": "string"
+        },
+        "max_words_per_turn": {
+          "default": 35,
+          "maximum": 120,
+          "minimum": 5,
+          "title": "Max Words Per Turn",
+          "type": "integer"
+        },
+        "fillers": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Fillers",
+          "type": "array"
+        },
+        "avoid": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Avoid",
+          "type": "array"
+        },
+        "speak_numbers_as_words": {
+          "default": true,
+          "title": "Speak Numbers As Words",
+          "type": "boolean"
+        }
+      },
+      "title": "Style",
+      "type": "object"
+    },
+    "TtsSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "default": "eleven_flash_v2_5",
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "language_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language Code"
+        }
+      },
+      "title": "TtsSettings",
+      "type": "object"
+    },
+    "Voicemail": {
+      "additionalProperties": false,
+      "properties": {
+        "leave_message": {
+          "default": false,
+          "title": "Leave Message",
+          "type": "boolean"
+        },
+        "text": {
+          "default": "",
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "title": "Voicemail",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "meta": {
+      "$ref": "#/$defs/Meta"
+    },
+    "persona": {
+      "$ref": "#/$defs/Persona"
+    },
+    "language": {
+      "$ref": "#/$defs/Language",
+      "default": {
+        "primary": "en-US",
+        "allow_switch_to": [],
+        "stt": {
+          "language": "en",
+          "model": "nova-3"
+        },
+        "tts": {
+          "language_code": null,
+          "model": "eleven_flash_v2_5"
+        }
+      }
+    },
+    "models": {
+      "$ref": "#/$defs/Models",
+      "default": {
+        "live": "claude-sonnet-4-6",
+        "analysis": "claude-sonnet-5-5",
+        "amd": "claude-haiku-4-5"
+      }
+    },
+    "compliance": {
+      "$ref": "#/$defs/Compliance"
+    },
+    "goal": {
+      "$ref": "#/$defs/Goal"
+    },
+    "lead_context_fields": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Lead Context Fields",
+      "type": "array"
+    },
+    "facts": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Facts",
+      "type": "array"
+    },
+    "never_say": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Never Say",
+      "type": "array"
+    },
+    "flow": {
+      "$ref": "#/$defs/Flow"
+    },
+    "objections": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Objection"
+      },
+      "title": "Objections",
+      "type": "array"
+    },
+    "exit_rules": {
+      "$ref": "#/$defs/ExitRules"
+    },
+    "dispositions": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Dispositions",
+      "type": "object"
+    },
+    "post_call_extract": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Post Call Extract",
+      "type": "array"
+    },
+    "notifications": {
+      "$ref": "#/$defs/Notifications",
+      "default": {
+        "prospect_confirmation": {},
+        "team": {}
+      }
+    },
+    "runtime": {
+      "$ref": "#/$defs/Runtime",
+      "default": {
+        "min_endpointing_delay": 0.5,
+        "max_endpointing_delay": 3.0,
+        "allow_interruptions": true,
+        "preemptive_generation": true,
+        "greeting_delay_ms": 600,
+        "background_noise": null
+      }
+    }
+  },
+  "required": [
+    "meta",
+    "persona",
+    "compliance",
+    "goal",
+    "flow",
+    "exit_rules",
+    "dispositions"
+  ],
+  "title": "Maria campaign playbook v1.0",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}
