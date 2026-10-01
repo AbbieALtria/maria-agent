@@ -6,11 +6,13 @@ Each test gets a session inside a transaction that is rolled back.
 """
 
 import asyncio
+import json
 import os
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 
 os.environ.setdefault("JWT_SECRET", "test-only-jwt-secret-0123456789abcdef")
+os.environ.setdefault("INTERNAL_API_SECRET", "test-only-internal-secret")
 
 import pytest
 from alembic import command
@@ -21,10 +23,11 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.config import get_settings, to_async_url
-from app.crm.enums import Market, UserRole
-from app.crm.models import Campaign, Client, User
+from app.crm.enums import AttemptStatus, LeadStatus, Market, UserRole
+from app.crm.models import CallAttempt, Campaign, Client, Lead, PlaybookVersion, SipTrunk, User
 from app.crm.security import create_access_token, hash_password
 from app.db import get_session
+from playbook_schema import EXAMPLES_DIR
 
 API_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -157,3 +160,56 @@ async def campaign(db_session: AsyncSession, yp_client: Client) -> Campaign:
     db_session.add(c)
     await db_session.flush()
     return c
+
+
+# --- Phase 2 call fixtures ---------------------------------------------------------------------
+
+PHONE = "+12125550100"
+EXAMPLE_PLAYBOOK = json.loads((EXAMPLES_DIR / "yp_seo_us.json").read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+async def ready_campaign(db_session, campaign):
+    trunk = SipTrunk(
+        name="telnyx-us", market=Market.US, provider="telnyx",
+        livekit_trunk_id="ST_test", caller_ids=["+12014621616"],
+    )  # fmt: skip
+    db_session.add(trunk)
+    await db_session.flush()
+    pv = PlaybookVersion(
+        campaign_id=campaign.id, version=1, playbook=EXAMPLE_PLAYBOOK, json_schema_version="1.0",
+        is_active=True,
+    )  # fmt: skip
+    db_session.add(pv)
+    await db_session.flush()
+    campaign.sip_trunk_id = trunk.id
+    campaign.caller_id = "+12014621616"
+    campaign.test_allowlist = [PHONE]
+    campaign.active_playbook_version_id = pv.id
+    await db_session.flush()
+    return campaign
+
+
+@pytest.fixture
+async def lead(db_session, ready_campaign) -> Lead:
+    lead = Lead(
+        campaign_id=ready_campaign.id, phone_e164=PHONE, business_name="Test Business",
+        contact_name="Abbie", timezone="America/New_York",
+    )  # fmt: skip
+    db_session.add(lead)
+    await db_session.flush()
+    return lead
+
+
+@pytest.fixture
+async def attempt(db_session, ready_campaign, lead) -> CallAttempt:
+    """An attempt as the test-call endpoint leaves it: dialing, lead calling."""
+    lead.status = LeadStatus.calling
+    a = CallAttempt(
+        lead_id=lead.id, campaign_id=ready_campaign.id,
+        playbook_version_id=ready_campaign.active_playbook_version_id, attempt_no=1,
+        status=AttemptStatus.dialing, livekit_room="call-x",
+    )  # fmt: skip
+    db_session.add(a)
+    await db_session.flush()
+    return a

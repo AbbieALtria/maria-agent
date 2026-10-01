@@ -7,7 +7,7 @@ requires-python = ">=3.11,<3.12"
 package = false
 
 [tool.uv.workspace]
-members = ["apps/api", "packages/shared", "packages/playbook-schema"]
+members = ["apps/api", "apps/voice-worker", "packages/shared", "packages/playbook-schema"]
 
 [dependency-groups]
 dev = [
@@ -26,12 +26,22 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "--import-mode=importlib"
-testpaths = ["apps/api/tests", "packages"]
+testpaths = ["apps/api/tests", "apps/voice-worker/tests", "packages"]
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 
 [tool.ruff.lint.isort]
-known-first-party = ["app", "maria_shared", "playbook_schema"]
+known-first-party = [
+    "app",
+    "maria_shared",
+    "playbook_schema",
+    "amd_flow",
+    "crm_client",
+    "main",
+    "maria_agent",
+    "postcall",
+    "worker_config",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "apps/api/alembic/versions/*" = ["E501"]

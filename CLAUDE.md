@@ -100,3 +100,64 @@ PH trunk TBD · S3-compatible bucket for recordings · Railway for all deploymen
     Dashboard/Calls/Appointments/Review/Playbooks pages are placeholders. OpenLeads import and
     API keys are not built.
   - Next: Phase 2 (first AI call), per 06-CLAUDE-CODE-PHASE-PROMPTS.md.
+- 2026-10-01: **Phase 2a (first AI call, trimmed Phase 2) built; live call not yet run.**
+  - packages/playbook-schema: Pydantic models for 04 §1 + §4 `runtime` (extra keys forbidden),
+    04 §7 rules (placeholders, regex triggers, opener ≤ 60 words, required dispositions, onsite ⇒
+    address, disclosure text), `validation_errors()`, `playbook.schema.json` (regenerate with
+    `uv run python -m playbook_schema`; a test fails if it is stale), `examples/yp_seo_us.json`, and
+    `prompt.py::build_system_prompt` (04 §2 order). The prompt has a snapshot test; regenerate it
+    with UPDATE_SNAPSHOTS=1.
+  - API: `/internal/*` (X-Internal-Secret, constant-time compare, 503 if unset).
+    - `GET dispatch-context`: re-checks the test allowlist and the playbook.
+    - `PATCH calls/{id}`: the first `outcome` finishes the attempt and applies the state machine
+      once (app/dialer/calls.py).
+    - `POST events`: atomic append to `transcript` for turns, `call_events` for everything else.
+    - `POST tool/{name}`: all of 03 §4, idempotent per attempt, every call logged as a `tool`
+      call_event. send_info / transfer_to_human / escalate_complaint are stubs returning
+      `{allowed:false}`; escalate also sets needs_review.
+    - Tools only set `attempt.disposition` (precedence dnc > appointment_set > wrong_number >
+      callback > not_interested > rest). The lead status changes once, at the final PATCH.
+      add_to_dnc writes the DNC entry and an opt_out consent event immediately.
+    - check_slots is static: Mon–Fri 10:00/14:00 in the prospect's timezone, respecting
+      min_lead_time/max_days_ahead (app/dialer/slots.py). book_appointment only accepts those slots.
+      schedule_callback parses ISO or simple phrases and clamps to 08:00–21:00.
+  - API, test calls:
+    - `POST /campaigns/{id}/test-call` (manager+) refuses unless the campaign is in test_mode, the
+      phone is on test_allowlist and not on the DNC list, there is an active trunk with a LiveKit
+      id, a caller_id and a valid active playbook, and the lead isn't calling. It takes a row lock,
+      does ManualRequeue → SchedulerPick, creates the attempt, commits, then dispatches
+      (dialer/livekit_client.py, a FastAPI dependency). If the dispatch fails, the attempt is
+      marked failed and the lead goes back to queued.
+    - `GET /calls/{id}` (JWT) for polling. `POST /campaigns/{id}/playbooks/validate`.
+    - Saving a playbook version is still unvalidated; test-call and dispatch-context validate it.
+  - apps/voice-worker (virtual uv workspace member, livekit-agents pinned ~=1.8.3): main.py
+    (AgentServer, dispatch context → session.start → AMD helper wrapping create_sip_participant
+    with wait_until_answered → human: greet unless a reply is already pending; machine:
+    voicemail/ivr/no_human), maria_agent.py (11 tools; set_stage/end_call don't trigger a reply;
+    end_call hangs up after the farewell plays), amd_flow.py (SIP status / AMD mapping),
+    postcall.py (`messages.parse` structured output → 04 §6 result; latency p50/p95 from
+    `e2e_latency`), crm_client.py (retries 5xx only). End conditions: end_call, prospect hangup,
+    max_duration, silence (user_away_timeout: one "still there?", then farewell). A shutdown hook
+    marks unfinished attempts failed.
+  - Models: live `claude-sonnet-4-6`, because the livekit Anthropic plugin drops thinking blocks
+    and Sonnet 5.5 can't run without them. Analysis `claude-sonnet-5-5` via the SDK; AMD
+    `claude-haiku-4-5`.
+  - Scripts: lk_setup.py/.ps1 (appends INTERNAL_API_SECRET to .env if missing; creates or syncs
+    the LiveKit trunk "telnyx-us"; upserts the sip_trunks row, campaign, active playbook version
+    and test lead; audit-logged), worker.ps1 (download-files, then dev), test_call.py/.ps1.
+  - Tests: 188 pytest (playbook rules + snapshot, slots/callbacks, internal auth, every tool,
+    events, PATCH idempotency + state application, test-call guards incl. allowlist/test_mode/DNC/
+    concurrent/dispatch failure, lk_setup idempotency, worker helpers and tool schemas).
+    test_call.py was run end to end against the API with a fake dispatcher that plays a scripted
+    call through the real internal endpoints.
+  - Known gaps:
+    - Never run against LiveKit, Telnyx, Deepgram, ElevenLabs or Anthropic: there were no
+      credentials, and huggingface.co is blocked in the build sandbox, so `download-files` was
+      untested. The worker's live path (AMD timing, greeting, hangup) needs the acceptance call.
+    - The turn-detector plugin is deprecated in 1.8.3 (warning only).
+    - No recording/egress, Calls UI or voice-worker Dockerfile (Phase 2b).
+    - No confirmation SMS/email.
+    - The cost_usd/usage roll-up is not computed.
+    - Not run on Windows.
+  - Next: acceptance call with the developer (lk_setup → dev → worker → test_call), then
+    Phase 2b (recording/egress, Calls page, worker Dockerfile).

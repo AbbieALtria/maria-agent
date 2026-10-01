@@ -18,6 +18,7 @@ from app.crm.schemas import (
 )
 from app.learning.models import EvalRun, EvalScenario
 from maria_shared.phone import InvalidPhoneError, normalize_phone
+from playbook_schema import validation_errors
 
 router = APIRouter(prefix="/campaigns", tags=["campaigns"])
 
@@ -382,3 +383,13 @@ async def activate_playbook(
     await session.commit()
     await session.refresh(pv)
     return pv
+
+
+@router.post("/{campaign_id}/playbooks/validate")
+async def validate_playbook(
+    campaign_id: uuid.UUID, body: PlaybookIn, session: DbSession, _: AnyUser
+) -> dict[str, Any]:
+    """Check a playbook against the schema + 04 §7 rules without saving it."""
+    await get_campaign(session, campaign_id)
+    errors = validation_errors(body.playbook)
+    return {"valid": not errors, "errors": errors}
